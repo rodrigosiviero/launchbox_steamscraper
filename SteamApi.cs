@@ -35,7 +35,7 @@ namespace SteamScraper
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             using (var webClient = new System.Net.WebClient())
             {
-                string gameUrl = "https://store.steampowered.com/api/appdetails?appids=" + appId;
+                string gameUrl = "https://store.steampowered.com/api/appdetails?cc=UK&appids=" + appId;
                 var json = webClient.DownloadString(gameUrl);
 
                 JObject jsonContent = JObject.Parse(json);
@@ -48,13 +48,13 @@ namespace SteamScraper
                 genres = (JArray)jsonContent[appId]["data"]["genres"];
                 screenShots = (JArray)jsonContent[appId]["data"]["screenshots"];
                 movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
-                //releaseDate = (string)jsonContent[appId]["data"]["release_date"]["date"];
+                releaseDate = (string)jsonContent[appId]["data"]["release_date"]["date"];
             }
 
-            //string format = @"dd MMM, yyyy";
+            string format = @"dd MMM, yyyy";
 
-            //DateTime releaseDateFinal = DateTime.ParseExact(releaseDate, format,
-            //    CultureInfo.InvariantCulture);
+            DateTime releaseDateFinal = DateTime.ParseExact(releaseDate, format,
+                CultureInfo.InvariantCulture);
 
             //Set Data
             SteamScraper.game.Title = name;
