@@ -48,13 +48,13 @@ namespace SteamScraper
                 genres = (JArray)jsonContent[appId]["data"]["genres"];
                 screenShots = (JArray)jsonContent[appId]["data"]["screenshots"];
                 movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
-                releaseDate = (string)jsonContent[appId]["data"]["release_date"]["date"];
+                //releaseDate = (string)jsonContent[appId]["data"]["release_date"]["date"];
             }
 
-            string format = @"dd MMM, yyyy";
+            //string format = @"dd MMM, yyyy";
 
-            DateTime releaseDateFinal = DateTime.ParseExact(releaseDate, format,
-                CultureInfo.InvariantCulture);
+            //DateTime releaseDateFinal = DateTime.ParseExact(releaseDate, format,
+            //    CultureInfo.InvariantCulture);
 
             //Set Data
             SteamScraper.game.Title = name;
@@ -62,7 +62,7 @@ namespace SteamScraper
             SteamScraper.game.Developer = developer;
             SteamScraper.game.Publisher = publisher;
             SteamScraper.game.GenresString = genreListFinal;
-            SteamScraper.game.ReleaseDate = releaseDateFinal.Date;
+            //SteamScraper.game.ReleaseDate = releaseDateFinal.Date;
 
             //GenreList
             List<string> genreList = new List<string>();
