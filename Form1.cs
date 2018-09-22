@@ -23,7 +23,7 @@ namespace SteamScraper
             RegexOptions options = RegexOptions.Singleline | RegexOptions.Multiline;
             Match m = Regex.Match(input, pattern, options);
             SteamAppId = m.Groups[1].Value;
-            if (SteamScraper.game.Title != null || SteamScraper.game.Publisher !=null || SteamScraper.game.Developer != null || SteamScraper.game.Notes != null || SteamScraper.game.Genres != null)
+            if (SteamScraper.game.Publisher != "" || SteamScraper.game.Developer != "" || SteamScraper.game.Notes != "" || SteamScraper.game.GenresString != "")
             {
                 DialogResult dialogResult = MessageBox.Show("This game has some Metadata already, Do you want to replace it?", "Steam Downloader", MessageBoxButtons.YesNo);
                 if (dialogResult == DialogResult.Yes)
@@ -34,6 +34,10 @@ namespace SteamScraper
                 {
                     this.Close();
                 }
+            }
+            else
+            {
+                SteamApi.SteamSearch(SteamAppId);
             }
             this.Close();
         }

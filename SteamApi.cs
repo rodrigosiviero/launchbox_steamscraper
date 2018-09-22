@@ -26,7 +26,6 @@ namespace SteamScraper
         private static string gameTitle;
         private static JArray screenShots;
         private static JArray genres;
-        private static string nameFinal;
 
         public static void SteamSearch(string appId)
         {
@@ -57,7 +56,7 @@ namespace SteamScraper
             SteamScraper.game.Developer = developer;
             SteamScraper.game.Publisher = publisher;
             SteamScraper.game.GenresString = genreListFinal;
-            SteamScraper.game.ReleaseDate = releaseDate;
+            SteamScraper.game.ReleaseYear = releaseDate.Year;
 
             //GenreList
             List<string> genreList = new List<string>();
