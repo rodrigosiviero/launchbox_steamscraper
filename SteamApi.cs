@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Globalization;
 
 namespace SteamScraper
 {
@@ -21,7 +22,7 @@ namespace SteamScraper
         public static string publisher;
         public static string genreListFinal;
         public static string movie;
-        public static DateTime releaseDate;
+        public static string releaseDate;
         private static string plataforma;
         private static string gameTitle;
         private static JArray screenShots;
@@ -47,8 +48,13 @@ namespace SteamScraper
                 genres = (JArray)jsonContent[appId]["data"]["genres"];
                 screenShots = (JArray)jsonContent[appId]["data"]["screenshots"];
                 movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
-                releaseDate = (DateTime)jsonContent[appId]["data"]["release_date"]["date"];
+                releaseDate = (string)jsonContent[appId]["data"]["release_date"]["date"];
             }
+
+            string format = @"dd MMM, yyyy";
+
+            DateTime releaseDateFinal = DateTime.ParseExact(releaseDate, format,
+                CultureInfo.InvariantCulture);
 
             //Set Data
             SteamScraper.game.Title = name;
@@ -56,7 +62,7 @@ namespace SteamScraper
             SteamScraper.game.Developer = developer;
             SteamScraper.game.Publisher = publisher;
             SteamScraper.game.GenresString = genreListFinal;
-            SteamScraper.game.ReleaseYear = releaseDate.Year;
+            SteamScraper.game.ReleaseDate = releaseDateFinal.Date;
 
             //GenreList
             List<string> genreList = new List<string>();
