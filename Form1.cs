@@ -23,11 +23,27 @@ namespace SteamScraper
             RegexOptions options = RegexOptions.Singleline | RegexOptions.Multiline;
             Match m = Regex.Match(input, pattern, options);
             SteamAppId = m.Groups[1].Value;
-            SteamApi.SteamSearch(SteamAppId);
+            if (SteamScraper.game.Title != null || SteamScraper.game.Publisher !=null || SteamScraper.game.Developer != null || SteamScraper.game.Notes != null || SteamScraper.game.Genres != null)
+            {
+                DialogResult dialogResult = MessageBox.Show("This game has some Metadata already, Do you want to replace it?", "Steam Downloader", MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    SteamApi.SteamSearch(SteamAppId);
+                }
+                else if (dialogResult == DialogResult.No)
+                {
+                    this.Close();
+                }
+            }
             this.Close();
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label1_Click(object sender, EventArgs e)
         {
 
         }

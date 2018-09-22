@@ -8,6 +8,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace SteamScraper
 {
@@ -48,11 +49,10 @@ namespace SteamScraper
                 screenShots = (JArray)jsonContent[appId]["data"]["screenshots"];
                 movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
                 releaseDate = (DateTime)jsonContent[appId]["data"]["release_date"]["date"];
-                nameFinal = GetValidFileName(name);
             }
 
             //Set Data
-            SteamScraper.game.Title = nameFinal;
+            SteamScraper.game.Title = name;
             SteamScraper.game.Notes = sDesc;
             SteamScraper.game.Developer = developer;
             SteamScraper.game.Publisher = publisher;
@@ -73,16 +73,16 @@ namespace SteamScraper
             string destMovies = Path.Combine(path, "Videos", plataforma);
             string destImages = Path.Combine(path, "Images", plataforma);
             //Download Trailer
-            downloadFile(movie, destMovies + @"\" + gameTitle + ".mp4");
+            downloadFile(movie, destMovies + @"\" + CleanFileName(gameTitle) + ".mp4");
             //Download Banner
-            string banner_path = destImages + @"\" + "\\Steam Banner\\" + gameTitle + ".jpg";
+            string banner_path = destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg";
             downloadFile(banner, banner_path);
 
             var count = 1;
             //List of Screenshots
             foreach (var oneSS in screenShots)
             {
-                downloadFile(oneSS["path_thumbnail"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + gameTitle + "-" + count.ToString("D2") + ".jpg");
+                downloadFile(oneSS["path_thumbnail"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
                 count++;
             }
             //Saves data
@@ -102,11 +102,9 @@ namespace SteamScraper
             }
         }
 
-        private static string GetValidFileName(string fileName)
+        public static string CleanFileName(string fileName)
         {
-            // remove any invalid character from the filename.
-            String ret = Regex.Replace(fileName.Trim(), "[^A-Za-z0-9_. ]+", "");
-            return ret;
+            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), "_"));
         }
 
     }
