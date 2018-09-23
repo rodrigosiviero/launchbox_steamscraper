@@ -47,8 +47,16 @@ namespace SteamScraper
                 publisher = (string)jsonContent[appId]["data"]["publishers"][0];
                 genres = (JArray)jsonContent[appId]["data"]["genres"];
                 screenShots = (JArray)jsonContent[appId]["data"]["screenshots"];
-                movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
                 releaseDate = (string)jsonContent[appId]["data"]["release_date"]["date"];
+                try
+                {
+                    movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
+                }
+                catch (Exception)
+                {
+                    movie = null;
+                    MessageBox.Show("Game Trailer doesn't exist and won't be downloaded!");
+                }
             }
             string format = @"d MMM, yyyy";
 
@@ -83,7 +91,10 @@ namespace SteamScraper
             string destMovies = Path.Combine(path, "Videos", plataforma);
             string destImages = Path.Combine(path, "Images", plataforma);
             //Download Trailer
-            downloadFile(movie, destMovies + @"\" + CleanFileName(gameTitle) + ".mp4");
+            if (movie != null)
+            {
+                downloadFile(movie, destMovies + @"\" + CleanFileName(gameTitle) + ".mp4");
+            }            
             //Download Banner
             string banner_path = destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg";
             downloadFile(banner, banner_path);
