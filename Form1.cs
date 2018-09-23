@@ -22,24 +22,33 @@ namespace SteamScraper
             string input = @url;
             RegexOptions options = RegexOptions.Singleline | RegexOptions.Multiline;
             Match m = Regex.Match(input, pattern, options);
-            SteamAppId = m.Groups[1].Value;
-            if (SteamScraper.game.Publisher != "" || SteamScraper.game.Developer != "" || SteamScraper.game.Notes != "" || SteamScraper.game.GenresString != "")
+            
+            if (!m.Success)
             {
-                DialogResult dialogResult = MessageBox.Show("This game has some Metadata already, Do you want to replace it?", "Steam Downloader", MessageBoxButtons.YesNo);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    SteamApi.SteamSearch(SteamAppId);
-                }
-                else if (dialogResult == DialogResult.No)
-                {
-                    this.Close();
-                }
+                MessageBox.Show("Please paste the entire Steam URL, couldn't find the appId!");
             }
             else
             {
-                SteamApi.SteamSearch(SteamAppId);
+                SteamAppId = m.Groups[1].Value;
+                if (SteamScraper.game.GetVideoPath() != null || SteamScraper.game.Publisher != "" || SteamScraper.game.Developer != "" || SteamScraper.game.Notes != "" || SteamScraper.game.GenresString != "")
+                {
+                    DialogResult dialogResult = MessageBox.Show("This game has some Metadata already, Do you want to replace it?", "Steam Downloader", MessageBoxButtons.YesNo);
+                    if (dialogResult == DialogResult.Yes)
+                    {
+                        SteamApi.SteamSearch(SteamAppId);
+                    }
+                    else if (dialogResult == DialogResult.No)
+                    {
+                        this.Close();
+                    }
+                }
+                else
+                {
+                    SteamApi.SteamSearch(SteamAppId);
+                }
+                this.Close();
             }
-            this.Close();
+
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)

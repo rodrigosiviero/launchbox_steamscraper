@@ -50,19 +50,10 @@ namespace SteamScraper
                 movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
                 releaseDate = (string)jsonContent[appId]["data"]["release_date"]["date"];
             }
-
-            string format = @"dd MMM, yyyy";
+            string format = @"d MMM, yyyy";
 
             DateTime releaseDateFinal = DateTime.ParseExact(releaseDate, format,
                 CultureInfo.InvariantCulture);
-
-            //Set Data
-            SteamScraper.game.Title = name;
-            SteamScraper.game.Notes = sDesc;
-            SteamScraper.game.Developer = developer;
-            SteamScraper.game.Publisher = publisher;
-            SteamScraper.game.GenresString = genreListFinal;
-            //SteamScraper.game.ReleaseDate = releaseDateFinal.Date;
 
             //GenreList
             List<string> genreList = new List<string>();
@@ -71,6 +62,14 @@ namespace SteamScraper
                 genreList.Add(oneGenre["description"].ToString());
             }
             genreListFinal = string.Join(";", genreList);
+
+            //Set Data
+            SteamScraper.game.Title = name;
+            SteamScraper.game.Notes = sDesc;
+            SteamScraper.game.Developer = developer;
+            SteamScraper.game.Publisher = publisher;
+            SteamScraper.game.GenresString = genreListFinal;
+            SteamScraper.game.ReleaseDate = releaseDateFinal.Date;
 
             string path = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             plataforma = SteamScraper.game.Platform;
