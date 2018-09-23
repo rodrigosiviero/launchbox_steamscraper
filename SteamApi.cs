@@ -63,9 +63,15 @@ namespace SteamScraper
             }
             genreListFinal = string.Join(";", genreList);
 
+            string pattern = @"<[^>].+?>";
+            String sDescFinal = Regex.Replace(sDesc, pattern, String.Empty);
+
+
+
+
             //Set Data
             SteamScraper.game.Title = name;
-            SteamScraper.game.Notes = sDesc;
+            SteamScraper.game.Notes = sDescFinal;
             SteamScraper.game.Developer = developer;
             SteamScraper.game.Publisher = publisher;
             SteamScraper.game.GenresString = genreListFinal;
