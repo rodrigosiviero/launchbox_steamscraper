@@ -103,7 +103,7 @@ namespace SteamScraper
             //List of Screenshots
             foreach (var oneSS in screenShots)
             {
-                downloadFile(oneSS["path_thumbnail"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
+                downloadFile(oneSS["path_full"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
                 count++;
             }
             //Saves data
