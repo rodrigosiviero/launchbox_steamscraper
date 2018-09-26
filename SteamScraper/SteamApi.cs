@@ -16,16 +16,16 @@ namespace SteamScraper
     class SteamApi
     {
         public static string name;
-        public static string sDesc;
-        public static string banner;
+        public static string short_description;
+        public static string header_image;
         public static string developer;
-        public static string publisher;
+        public static string publishers;
         public static string genreListFinal;
         public static string movie;
-        public static string releaseDate;
+        public static string release_date;
         private static string plataforma;
         private static string gameTitle;
-        private static JArray screenShots;
+        private static JArray screenshots;
         private static JArray genres;
 
         public static void SteamSearch(string appId)
@@ -41,13 +41,12 @@ namespace SteamScraper
                 JObject jsonContent = JObject.Parse(json);
                 //Serialization
                 name = (string)jsonContent[appId]["data"]["name"];
-                sDesc = (string)jsonContent[appId]["data"]["short_description"];
-                banner = (string)jsonContent[appId]["data"]["header_image"];
-                developer = (string)jsonContent[appId]["data"]["developers"][0];
-                publisher = (string)jsonContent[appId]["data"]["publishers"][0];
+                short_description = (string)jsonContent[appId]["data"]["short_description"];
+                header_image = (string)jsonContent[appId]["data"]["header_image"];
+                publishers = (string)jsonContent[appId]["data"]["publishers"][0];
                 genres = (JArray)jsonContent[appId]["data"]["genres"];
-                screenShots = (JArray)jsonContent[appId]["data"]["screenshots"];
-                releaseDate = (string)jsonContent[appId]["data"]["release_date"]["date"];
+                screenshots = (JArray)jsonContent[appId]["data"]["screenshots"];
+                release_date = (string)jsonContent[appId]["data"]["release_date"]["date"];
                 try
                 {
                     movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
@@ -55,12 +54,19 @@ namespace SteamScraper
                 catch (Exception)
                 {
                     movie = null;
-                    MessageBox.Show("Game Trailer doesn't exist and won't be downloaded!");
+                }
+                try
+                {
+                    developer = (string)jsonContent[appId]["data"]["developers"][0];
+                }
+                catch (Exception)
+                {
+                    developer = null;
                 }
             }
             string format = @"d MMM, yyyy";
 
-            DateTime releaseDateFinal = DateTime.ParseExact(releaseDate, format,
+            DateTime releaseDateFinal = DateTime.ParseExact(release_date, format,
                 CultureInfo.InvariantCulture);
 
             //GenreList
@@ -72,7 +78,7 @@ namespace SteamScraper
             genreListFinal = string.Join(";", genreList);
 
             string pattern = @"<[^>].+?>";
-            String sDescFinal = Regex.Replace(sDesc, pattern, String.Empty);
+            String sDescFinal = Regex.Replace(short_description, pattern, String.Empty);
 
 
 
@@ -81,7 +87,7 @@ namespace SteamScraper
             SteamScraper.game.Title = name;
             SteamScraper.game.Notes = sDescFinal;
             SteamScraper.game.Developer = developer;
-            SteamScraper.game.Publisher = publisher;
+            SteamScraper.game.Publisher = publishers;
             SteamScraper.game.GenresString = genreListFinal;
             SteamScraper.game.ReleaseDate = releaseDateFinal.Date;
 
@@ -97,11 +103,11 @@ namespace SteamScraper
             }            
             //Download Banner
             string banner_path = destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg";
-            downloadFile(banner, banner_path);
+            downloadFile(header_image, banner_path);
 
             var count = 1;
             //List of Screenshots
-            foreach (var oneSS in screenShots)
+            foreach (var oneSS in screenshots)
             {
                 downloadFile(oneSS["path_full"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
                 count++;
