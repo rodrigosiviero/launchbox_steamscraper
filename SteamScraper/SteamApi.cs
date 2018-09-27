@@ -43,25 +43,32 @@ namespace SteamScraper
                 name = (string)jsonContent[appId]["data"]["name"];
                 short_description = (string)jsonContent[appId]["data"]["short_description"];
                 header_image = (string)jsonContent[appId]["data"]["header_image"];
-                publishers = (string)jsonContent[appId]["data"]["publishers"][0];
                 genres = (JArray)jsonContent[appId]["data"]["genres"];
                 screenshots = (JArray)jsonContent[appId]["data"]["screenshots"];
                 release_date = (string)jsonContent[appId]["data"]["release_date"]["date"];
-                try
+                if (jsonContent[appId]["data"]["publishers"] != null)
                 {
-                    movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
+                    publishers = (string)jsonContent[appId]["data"]["publishers"][0];
                 }
-                catch (Exception)
+                else
                 {
-                    movie = null;
+                    publishers = null;
                 }
-                try
+                if (jsonContent[appId]["data"]["developers"] != null)
                 {
                     developer = (string)jsonContent[appId]["data"]["developers"][0];
                 }
-                catch (Exception)
+                else
                 {
                     developer = null;
+                }
+                if (jsonContent[appId]["data"]["movies"] != null)
+                {
+                    movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
+                }
+                else
+                {
+                    movie = null;
                 }
             }
             string format = @"d MMM, yyyy";
@@ -79,9 +86,6 @@ namespace SteamScraper
 
             string pattern = @"<[^>].+?>";
             String sDescFinal = Regex.Replace(short_description, pattern, String.Empty);
-
-
-
 
             //Set Data
             SteamScraper.game.Title = name;
