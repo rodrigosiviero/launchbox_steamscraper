@@ -43,7 +43,6 @@ namespace SteamScraper
                 name = (string)jsonContent[appId]["data"]["name"];
                 short_description = (string)jsonContent[appId]["data"]["short_description"];
                 header_image = (string)jsonContent[appId]["data"]["header_image"];
-                genres = (JArray)jsonContent[appId]["data"]["genres"];
                 screenshots = (JArray)jsonContent[appId]["data"]["screenshots"];
                 release_date = (string)jsonContent[appId]["data"]["release_date"]["date"];
                 if (jsonContent[appId]["data"]["publishers"] != null)
@@ -70,19 +69,28 @@ namespace SteamScraper
                 {
                     movie = null;
                 }
+                if (jsonContent[appId]["data"]["genres"] != null)
+                {
+                    genres = (JArray)jsonContent[appId]["data"]["genres"];
+                    //GenreList
+                    List<string> genreList = new List<string>();
+                    foreach (var oneGenre in genres)
+                    {
+                        genreList.Add(oneGenre["description"].ToString());
+                    }
+                    genreListFinal = string.Join(";", genreList);
+                }
+                else
+                {
+                    genres = null;
+                }
             }
             string format = @"d MMM, yyyy";
 
             DateTime releaseDateFinal = DateTime.ParseExact(release_date, format,
                 CultureInfo.InvariantCulture);
 
-            //GenreList
-            List<string> genreList = new List<string>();
-            foreach (var oneGenre in genres)
-            {
-                genreList.Add(oneGenre["description"].ToString());
-            }
-            genreListFinal = string.Join(";", genreList);
+
 
             string pattern = @"<[^>].+?>";
             String sDescFinal = Regex.Replace(short_description, pattern, String.Empty);
