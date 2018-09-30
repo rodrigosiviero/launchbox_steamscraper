@@ -53,10 +53,25 @@ namespace SteamScraper
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
-
+            this.ActiveControl = this.button1;
         }
 
         private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+
+        }
+
+        private void Form1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
 
         }
