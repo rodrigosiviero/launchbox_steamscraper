@@ -27,6 +27,7 @@ namespace SteamScraper
         private static string gameTitle;
         private static JArray screenshots;
         private static JArray genres;
+        private static DateTime? dateTime;
 
         public static void SteamSearch(string appId)
         {
@@ -87,10 +88,18 @@ namespace SteamScraper
             }
             string format = @"d MMM, yyyy";
 
-            DateTime releaseDateFinal = DateTime.ParseExact(release_date, format,
-                CultureInfo.InvariantCulture);
 
-
+            if (release_date.Length < 11)
+            {
+                dateTime = null;
+                SteamScraper.game.ReleaseDate = dateTime;
+            }
+            else
+            {
+                dateTime = DateTime.ParseExact(release_date, format,
+                                        CultureInfo.InvariantCulture);
+                SteamScraper.game.ReleaseDate = dateTime.Value.Date;
+            }
 
             string pattern = @"<[^>].+?>";
             String sDescFinal = Regex.Replace(short_description, pattern, String.Empty);
@@ -101,7 +110,7 @@ namespace SteamScraper
             SteamScraper.game.Developer = developer;
             SteamScraper.game.Publisher = publishers;
             SteamScraper.game.GenresString = genreListFinal;
-            SteamScraper.game.ReleaseDate = releaseDateFinal.Date;
+
 
             string path = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             plataforma = SteamScraper.game.Platform;
