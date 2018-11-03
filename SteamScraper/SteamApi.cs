@@ -41,10 +41,20 @@ namespace SteamScraper
 
                 JObject jsonContent = JObject.Parse(json);
                 //Serialization
+                var data = jsonContent[appId]["data"];
+                JToken success = jsonContent[appId]["success"];
+
+                if (success.ToString() == "True")
+                {
+                    Console.WriteLine("Found");
+                }
+                else
+                {
+                    return;
+                }
                 name = (string)jsonContent[appId]["data"]["name"];
                 short_description = (string)jsonContent[appId]["data"]["short_description"];
                 header_image = (string)jsonContent[appId]["data"]["header_image"];
-                screenshots = (JArray)jsonContent[appId]["data"]["screenshots"];
                 release_date = (string)jsonContent[appId]["data"]["release_date"]["date"];
                 if (jsonContent[appId]["data"]["publishers"] != null)
                 {
@@ -69,6 +79,14 @@ namespace SteamScraper
                 else
                 {
                     movie = null;
+                }
+                if (jsonContent[appId]["data"]["screenshots"] != null)
+                {
+                    screenshots = (JArray)jsonContent[appId]["data"]["screenshots"];
+                }
+                else
+                {
+                    screenshots = null;
                 }
                 if (jsonContent[appId]["data"]["genres"] != null)
                 {
@@ -126,12 +144,15 @@ namespace SteamScraper
             string banner_path = destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg";
             downloadFile(header_image, banner_path);
 
-            var count = 1;
             //List of Screenshots
-            foreach (var oneSS in screenshots)
+            if (screenshots != null)
             {
-                downloadFile(oneSS["path_full"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
-                count++;
+                var count = 1;
+                foreach (var oneSS in screenshots)
+                {
+                    downloadFile(oneSS["path_full"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
+                    count++;
+                }
             }
             //Saves data
             PluginHelper.DataManager.Save();
@@ -152,8 +173,8 @@ namespace SteamScraper
 
         public static string CleanFileName(string fileName)
         {
-            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), "_"));
+            var cleanTemp = Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), "_"));
+            return cleanTemp.Replace("'", "_");
         }
-
     }
 }

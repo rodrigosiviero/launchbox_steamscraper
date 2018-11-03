@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
 using Unbroken.LaunchBox.Plugins;
 using Unbroken.LaunchBox.Plugins.Data;
 
@@ -12,7 +14,7 @@ namespace SteamScraper
 
         public bool SupportsMultipleGames
         {
-            get { return false; }
+            get { return true; }
         }
 
         public string Caption
@@ -50,14 +52,36 @@ namespace SteamScraper
 
         public void OnSelected(IGame selectedGame)
         {
+            string input = selectedGame.ApplicationPath;
+            string steamPattern = @"steam://rungameid/";
             game = selectedGame;
-            Form1 frm = new Form1();
-            frm.Show();
+            if (Regex.IsMatch(input, steamPattern))
+            {
+                Regex rx = new Regex(@"(\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                MatchCollection matches = rx.Matches(input);
+                SteamApi.SteamSearch(matches[0].Value.ToString());
+            }
+            else
+            {
+                Form1 frm = new Form1();
+                frm.Show();
+            }
         }
 
         public void OnSelected(IGame[] selectedGames)
         {
-            throw new NotImplementedException();
+            foreach (var steamGame in selectedGames)
+            {
+                string input = steamGame.ApplicationPath;
+                string steamPattern = @"steam://rungameid/";
+                game = steamGame;
+                if (Regex.IsMatch(input, steamPattern))
+                {
+                    Regex rx = new Regex(@"(\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                    MatchCollection matches = rx.Matches(input);
+                    SteamApi.SteamSearch(matches[0].Value.ToString());
+                }
+            }
         }
     }
 }
