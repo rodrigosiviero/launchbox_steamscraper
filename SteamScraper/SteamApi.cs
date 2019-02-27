@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Globalization;
+using Newtonsoft.Json;
 
 namespace SteamScraper
 {
@@ -119,8 +120,9 @@ namespace SteamScraper
                 SteamScraper.game.ReleaseDate = dateTime.Value.Date;
             }
 
-            string pattern = @"<[^>].+?>";
-            String sDescFinal = Regex.Replace(short_description, pattern, String.Empty);
+            String sDescFinal = removeHtmlTags(short_description);
+            //string pattern = @"<[^>].+?>";
+            //String sDescFinal = Regex.Replace(short_description, pattern, String.Empty);
 
             //Set Data
             SteamScraper.game.Title = name;
@@ -138,7 +140,7 @@ namespace SteamScraper
             //Download Trailer
             if (movie != null)
             {
-                downloadFile(movie, destMovies + @"\" + CleanFileName(gameTitle) + ".mp4");
+                downloadFile(movie, destMovies + @"\" + CleanFileName(gameTitle) + ".webm");
             }            
             //Download Banner
             string banner_path = destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg";
@@ -154,6 +156,41 @@ namespace SteamScraper
                     count++;
                 }
             }
+            var dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var dllPathFinal = Path.Combine(dllPath ,"properties.json");
+            using (var streamReader = new StreamReader(dllPathFinal))
+            {
+                string jsonFile = streamReader.ReadToEnd();
+                Properties jsonConfig = JsonConvert.DeserializeObject<Properties>(jsonFile);
+                if (jsonConfig.customFields == "true")
+                {
+                    JToken steamSpyTags = SteamTags.SteamTag(appId);
+
+                    var oldfields = SteamScraper.game.GetAllCustomFields();
+
+                    foreach (var Tag in steamSpyTags)
+                    {
+                        JProperty jProperty = Tag.ToObject<JProperty>();
+                        string propertyName = jProperty.Name;
+                        foreach (var field in oldfields)
+                        {
+                            if (field.Name == "Tags")
+                            {
+                                if (field.Value == propertyName)
+                                {
+                                    SteamScraper.game.TryRemoveCustomField(field);
+                                }
+                            }
+                        }
+                        var tags = SteamScraper.game.AddNewCustomField();
+                        tags.Name = "Tags";
+                        tags.Value = propertyName;
+                    }
+                }
+            }
+
+
+
             //Saves data
             PluginHelper.DataManager.Save();
         }
@@ -169,6 +206,17 @@ namespace SteamScraper
                     dest
                 );
             }
+        }
+
+        public static string removeHtmlTags(string description)
+        {
+            string htmlTags = @"<[^>].+?>";
+            string quote = @"&quot;";
+            string amp = @"&amp;";
+            var temp = Regex.Replace(description, htmlTags, String.Empty);
+            temp = Regex.Replace(temp, quote,"\"");
+            temp = Regex.Replace(temp, amp, "&");
+            return temp;
         }
 
         public static string CleanFileName(string fileName)
