@@ -131,6 +131,18 @@ namespace SteamScraper
             SteamScraper.game.Publisher = publishers;
             SteamScraper.game.GenresString = genreListFinal;
 
+            //Additional Applications
+            
+            foreach (var addApp in SteamScraper.game.GetAllAdditionalApplications())
+            {
+                if (addApp.Name == "Visit Steam Database page")
+                {
+                    SteamScraper.game.TryRemoveAdditionalApplication(addApp);
+                }
+            }
+            var additionalApplication = SteamScraper.game.AddNewAdditionalApplication();
+            additionalApplication.Name = "Visit Steam Database page";
+            additionalApplication.ApplicationPath = "https://steamdb.info/app/" + appId + "/";
 
             string path = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             plataforma = SteamScraper.game.Platform;
@@ -141,7 +153,7 @@ namespace SteamScraper
             if (movie != null)
             {
                 downloadFile(movie, destMovies + @"\" + CleanFileName(gameTitle) + ".webm");
-            }            
+            }
             //Download Banner
             string banner_path = destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg";
             downloadFile(header_image, banner_path);
@@ -188,9 +200,6 @@ namespace SteamScraper
                     }
                 }
             }
-
-
-
             //Saves data
             PluginHelper.DataManager.Save();
         }

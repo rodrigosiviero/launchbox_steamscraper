@@ -47,7 +47,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="Unbroken.LaunchBox.Plugins">
-      <HintPath>..\..\..\..\..\LaunchBox\Metadata\Unbroken.LaunchBox.Plugins.dll</HintPath>
+      <HintPath>..\..\..\..\LaunchBox\Metadata\Unbroken.LaunchBox.Plugins.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -81,6 +81,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="properties.json" />
     <None Include="Resources\steam.ico" />
   </ItemGroup>
   <ItemGroup>
