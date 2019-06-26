@@ -51,6 +51,8 @@ namespace SteamScraper
                 }
                 else
                 {
+                    SteamDBLink(appId);
+                    PluginHelper.DataManager.Save();
                     return;
                 }
                 name = (string)jsonContent[appId]["data"]["name"];
@@ -131,19 +133,6 @@ namespace SteamScraper
             SteamScraper.game.Publisher = publishers;
             SteamScraper.game.GenresString = genreListFinal;
 
-            //Additional Applications
-            
-            foreach (var addApp in SteamScraper.game.GetAllAdditionalApplications())
-            {
-                if (addApp.Name == "Visit Steam Database page")
-                {
-                    SteamScraper.game.TryRemoveAdditionalApplication(addApp);
-                }
-            }
-            var additionalApplication = SteamScraper.game.AddNewAdditionalApplication();
-            additionalApplication.Name = "Visit Steam Database page";
-            additionalApplication.ApplicationPath = "https://steamdb.info/app/" + appId + "/";
-
             string path = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             plataforma = SteamScraper.game.Platform;
             gameTitle = SteamScraper.game.Title;
@@ -201,6 +190,7 @@ namespace SteamScraper
                 }
             }
             //Saves data
+            SteamDBLink(appId);
             PluginHelper.DataManager.Save();
         }
 
@@ -232,6 +222,21 @@ namespace SteamScraper
         {
             var cleanTemp = Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), "_"));
             return cleanTemp.Replace("'", "_");
+        }
+
+        public static void SteamDBLink(string appId)
+        {
+            //Additional Applications
+            foreach (var addApp in SteamScraper.game.GetAllAdditionalApplications())
+            {
+                if (addApp.Name == "Visit Steam Database page")
+                {
+                    SteamScraper.game.TryRemoveAdditionalApplication(addApp);
+                }
+            }
+            var additionalApplication = SteamScraper.game.AddNewAdditionalApplication();
+            additionalApplication.Name = "Visit Steam Database page";
+            additionalApplication.ApplicationPath = "https://steamdb.info/app/" + appId + "/";
         }
     }
 }
