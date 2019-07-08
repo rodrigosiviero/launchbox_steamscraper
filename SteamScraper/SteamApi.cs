@@ -163,23 +163,22 @@ namespace SteamScraper
             string marquee = "library_hero.jpg";
             string clearLogo = "logo.png";
 
-
-            if (CheckURI(boxCover, appId) != "-1")
+            if (CheckURI(clearLogo, appId) == "image/png")
+            {
+                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + clearLogo;
+                downloadFile(url, destImages + @"\" + "\\Clear Logo\\" + CleanFileName(gameTitle) + ".png");
+            }
+            
+            if (CheckURI(boxCover, appId) == "image/jpeg")
             {
                 string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + boxCover;
                 downloadFile(url, destImages + @"\" + "\\Box - Front\\" + CleanFileName(gameTitle) + ".jpg");
             }
 
-            if (CheckURI(marquee, appId) != "-1")
+            if (CheckURI(marquee, appId) == "image/jpeg")
             {
                 string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + marquee;
                 downloadFile(url, destImages + @"\" + "\\Arcade - Marquee\\" + CleanFileName(gameTitle) + ".jpg");
-            }
-
-            if (CheckURI(clearLogo, appId) != "-1")
-            {
-                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + clearLogo;
-                downloadFile(url, destImages + @"\" + "\\Clear Logo\\" + CleanFileName(gameTitle) + ".jpg");
             }
 
             var dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -237,10 +236,12 @@ namespace SteamScraper
             string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + type;
             Uri urlCheck = new Uri(url);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urlCheck);
-            request.Timeout = 3000;
             try
             {
-                return request.ContentLength.ToString();
+                var response = request.GetResponse() as HttpWebResponse;
+                var contentType = response.ContentType;
+                response.Close();
+                return contentType;
             }
             catch (Exception)
             {
