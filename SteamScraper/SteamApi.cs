@@ -157,6 +157,31 @@ namespace SteamScraper
                     count++;
                 }
             }
+
+            //Workaround for the new Steam Images
+            string boxCover = "library_600x900_2x.jpg";
+            string marquee = "library_hero.jpg";
+            string clearLogo = "logo.png";
+
+
+            if (CheckURI(boxCover, appId) != "-1")
+            {
+                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + boxCover;
+                downloadFile(url, destImages + @"\" + "\\Box - Front\\" + CleanFileName(gameTitle) + ".jpg");
+            }
+
+            if (CheckURI(marquee, appId) != "-1")
+            {
+                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + marquee;
+                downloadFile(url, destImages + @"\" + "\\Arcade - Marquee\\" + CleanFileName(gameTitle) + ".jpg");
+            }
+
+            if (CheckURI(clearLogo, appId) != "-1")
+            {
+                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + clearLogo;
+                downloadFile(url, destImages + @"\" + "\\Clear Logo\\" + CleanFileName(gameTitle) + ".jpg");
+            }
+
             var dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var dllPathFinal = Path.Combine(dllPath ,"properties.json");
             using (var streamReader = new StreamReader(dllPathFinal))
@@ -204,6 +229,22 @@ namespace SteamScraper
                     // Param2 = Path to save
                     dest
                 );
+            }
+        }
+
+        public static string CheckURI(string type, string appId)
+        {
+            string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + type;
+            Uri urlCheck = new Uri(url);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urlCheck);
+            request.Timeout = 3000;
+            try
+            {
+                return request.ContentLength.ToString();
+            }
+            catch (Exception)
+            {
+                return "False"; //could not connect to the internet (maybe) 
             }
         }
 
