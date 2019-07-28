@@ -1,16 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Net;
-using System.Text.RegularExpressions;
-using System.Windows.Forms;
+﻿using System.Linq;
 using Unbroken.LaunchBox.Plugins;
 using Unbroken.LaunchBox.Plugins.Data;
 
 namespace SteamScraper
 {
-    class SteamScraper : IGameMenuItemPlugin 
+    class SteamScraper : IGameMenuItemPlugin
     {
-        public static IGame game { get; set; }
+        public static IGame Game { get; set; }
 
         public bool SupportsMultipleGames
         {
@@ -37,8 +33,6 @@ namespace SteamScraper
             get { return false; }
         }
 
-        public static object Configs { get; private set; }
-
 
         public bool GetIsValidForGame(IGame selectedGame)
         {
@@ -50,38 +44,25 @@ namespace SteamScraper
             return selectedGames.Any(g => !string.IsNullOrEmpty(g.Platform));
         }
 
-        public void OnSelected(IGame selectedGame)
+        public IGame SelectedGame { get; set; }
+        public IGame[] SelectedGames { get; set; }
+
+
+        public void OnSelected(IGame pGame)
         {
-            string input = selectedGame.ApplicationPath;
-            string steamPattern = @"steam://rungameid/";
-            game = selectedGame;
-            if (Regex.IsMatch(input, steamPattern))
-            {
-                Regex rx = new Regex(@"(\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                MatchCollection matches = rx.Matches(input);
-                SteamApi.SteamSearch(matches[0].Value.ToString());
-            }
-            else
-            {
-                Form1 frm = new Form1();
-                frm.Show();
-            }
+            SelectedGame = pGame;
+            SelectedGames = null;
+            var frm = new Form1(SelectedGame, SelectedGames);
+            frm.Show();
         }
 
-        public void OnSelected(IGame[] selectedGames)
+
+        public void OnSelected(IGame[] pGames)
         {
-            foreach (var steamGame in selectedGames)
-            {
-                string input = steamGame.ApplicationPath;
-                string steamPattern = @"steam://rungameid/";
-                game = steamGame;
-                if (Regex.IsMatch(input, steamPattern))
-                {
-                    Regex rx = new Regex(@"(\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                    MatchCollection matches = rx.Matches(input);
-                    SteamApi.SteamSearch(matches[0].Value.ToString());
-                }
-            }
+            SelectedGame = null;
+            SelectedGames = pGames;
+            var frm = new Form1(SelectedGame, SelectedGames);
+            frm.Show();
         }
     }
 }

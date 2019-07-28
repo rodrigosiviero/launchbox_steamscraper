@@ -2,283 +2,114 @@
 using System.Net;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
-using Unbroken.LaunchBox.Plugins.Data;
-using Unbroken.LaunchBox.Plugins;
-using System.IO;
-using System.Reflection;
 using System.Windows.Forms;
-using System.Text.RegularExpressions;
-using System.Linq;
-using System.Globalization;
-using Newtonsoft.Json;
+
 
 namespace SteamScraper
 {
     class SteamApi
     {
-        public static string name;
-        public static string short_description;
-        public static string header_image;
-        public static string developer;
-        public static string publishers;
-        public static string genreListFinal;
-        public static string movie;
-        public static string release_date;
-        private static string plataforma;
-        private static string gameTitle;
-        private static JArray screenshots;
-        private static JArray genres;
-        private static DateTime? dateTime;
-
-        public static void SteamSearch(string appId)
+        public static void SteamSearch(SteamApp sa)
         {
-            //SSL
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            using (var webClient = new System.Net.WebClient())
-            {
-                string gameUrl = "https://store.steampowered.com/api/appdetails?cc=UK&appids=" + appId;
-                var json = webClient.DownloadString(gameUrl);
+            try {
+                //SSL
+                ServicePointManager.Expect100Continue = true;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                using (var webClient = new WebClient())
+                {
 
-                JObject jsonContent = JObject.Parse(json);
-                //Serialization
-                var data = jsonContent[appId]["data"];
-                JToken success = jsonContent[appId]["success"];
+                    var gameUrl = "https://store.steampowered.com/api/appdetails?cc=UK&appids=" + sa.AppId;
+                    var json = webClient.DownloadString(gameUrl);
 
-                if (success.ToString() == "True")
-                {
-                    Console.WriteLine("Found");
-                }
-                else
-                {
-                    SteamDBLink(appId);
-                    PluginHelper.DataManager.Save();
-                    return;
-                }
-                name = (string)jsonContent[appId]["data"]["name"];
-                short_description = (string)jsonContent[appId]["data"]["short_description"];
-                header_image = (string)jsonContent[appId]["data"]["header_image"];
-                release_date = (string)jsonContent[appId]["data"]["release_date"]["date"];
-                if (jsonContent[appId]["data"]["publishers"] != null)
-                {
-                    publishers = (string)jsonContent[appId]["data"]["publishers"][0];
-                }
-                else
-                {
-                    publishers = null;
-                }
-                if (jsonContent[appId]["data"]["developers"] != null)
-                {
-                    developer = (string)jsonContent[appId]["data"]["developers"][0];
-                }
-                else
-                {
-                    developer = null;
-                }
-                if (jsonContent[appId]["data"]["movies"] != null)
-                {
-                    movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
-                }
-                else
-                {
-                    movie = null;
-                }
-                if (jsonContent[appId]["data"]["screenshots"] != null)
-                {
-                    screenshots = (JArray)jsonContent[appId]["data"]["screenshots"];
-                }
-                else
-                {
-                    screenshots = null;
-                }
-                if (jsonContent[appId]["data"]["genres"] != null)
-                {
-                    genres = (JArray)jsonContent[appId]["data"]["genres"];
-                    //GenreList
-                    List<string> genreList = new List<string>();
-                    foreach (var oneGenre in genres)
+                    var jsonContent = JObject.Parse(json);
+                    //Serialization
+                    var success = jsonContent[sa.AppId]["success"];
+
+                    if (success.ToString() != "True")
                     {
-                        genreList.Add(oneGenre["description"].ToString());
+                        sa.Source = "Steam (Not Available In Store)";
+                        sa.HeaderImage = "http://steamcdn-a.akamaihd.net/steam/apps/" + sa.AppId + "/header.jpg";
+                        // Additional delay for SteamSpy API request
+                        System.Threading.Thread.Sleep(150);
+                        return;
                     }
-                    genreListFinal = string.Join(";", genreList);
-                }
-                else
-                {
-                    genres = null;
-                }
-            }
-            string format = @"d MMM, yyyy";
 
+                    //Get Metadata
+                    if (jsonContent[sa.AppId]["data"]["name"] != null)
+                        sa.AppName = (string)jsonContent[sa.AppId]["data"]["name"];
+                    
+                    if (jsonContent[sa.AppId]["data"]["short_description"] != null)
+                        sa.ShortDescription = (string)jsonContent[sa.AppId]["data"]["short_description"];
 
-            if (release_date.Length < 11)
-            {
-                dateTime = null;
-                SteamScraper.game.ReleaseDate = dateTime;
-            }
-            else
-            {
-                dateTime = DateTime.ParseExact(release_date, format,
-                                        CultureInfo.InvariantCulture);
-                SteamScraper.game.ReleaseDate = dateTime.Value.Date;
-            }
+                    if (jsonContent[sa.AppId]["data"]["is_free"] != null)
+                        if ((bool)jsonContent[sa.AppId]["data"]["is_free"])
+                            sa.Source = "Steam (Free)";
 
-            String sDescFinal = removeHtmlTags(short_description);
-            //string pattern = @"<[^>].+?>";
-            //String sDescFinal = Regex.Replace(short_description, pattern, String.Empty);
-
-            //Set Data
-            SteamScraper.game.Title = name;
-            SteamScraper.game.Notes = sDescFinal;
-            SteamScraper.game.Developer = developer;
-            SteamScraper.game.Publisher = publishers;
-            SteamScraper.game.GenresString = genreListFinal;
-
-            string path = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            plataforma = SteamScraper.game.Platform;
-            gameTitle = SteamScraper.game.Title;
-            string destMovies = Path.Combine(path, "Videos", plataforma);
-            string destImages = Path.Combine(path, "Images", plataforma);
-            //Download Trailer
-            if (movie != null)
-            {
-                downloadFile(movie, destMovies + @"\" + CleanFileName(gameTitle) + ".webm");
-            }
-            //Download Banner
-            string banner_path = destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg";
-            downloadFile(header_image, banner_path);
-
-            //List of Screenshots
-            if (screenshots != null)
-            {
-                var count = 1;
-                foreach (var oneSS in screenshots)
-                {
-                    downloadFile(oneSS["path_full"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
-                    count++;
-                }
-            }
-
-            //Workaround for the new Steam Images
-            string boxCover = "library_600x900_2x.jpg";
-            string marquee = "library_hero.jpg";
-            string clearLogo = "logo.png";
-
-            if (CheckURI(clearLogo, appId) == "image/png")
-            {
-                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + clearLogo;
-                downloadFile(url, destImages + @"\" + "\\Clear Logo\\" + CleanFileName(gameTitle) + ".png");
-            }
-            
-            if (CheckURI(boxCover, appId) == "image/jpeg")
-            {
-                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + boxCover;
-                downloadFile(url, destImages + @"\" + "\\Box - Front\\" + CleanFileName(gameTitle) + ".jpg");
-            }
-
-            if (CheckURI(marquee, appId) == "image/jpeg")
-            {
-                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + marquee;
-                downloadFile(url, destImages + @"\" + "\\Arcade - Marquee\\" + CleanFileName(gameTitle) + ".jpg");
-            }
-
-            var dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var dllPathFinal = Path.Combine(dllPath ,"properties.json");
-            using (var streamReader = new StreamReader(dllPathFinal))
-            {
-                string jsonFile = streamReader.ReadToEnd();
-                Properties jsonConfig = JsonConvert.DeserializeObject<Properties>(jsonFile);
-                if (jsonConfig.customFields == "true")
-                {
-                    JToken steamSpyTags = SteamTags.SteamTag(appId);
-
-                    var oldfields = SteamScraper.game.GetAllCustomFields();
-
-                    foreach (var Tag in steamSpyTags)
+                    if (jsonContent[sa.AppId]["data"]["release_date"]["date"] != null)
                     {
-                        JProperty jProperty = Tag.ToObject<JProperty>();
-                        string propertyName = jProperty.Name;
-                        foreach (var field in oldfields)
+                        if ((bool)jsonContent[sa.AppId]["data"]["release_date"]["coming_soon"] == false)
+                            sa.ReleaseDate = (string)jsonContent[sa.AppId]["data"]["release_date"]["date"];
+                        else
+                            sa.Source = "Steam (Not Released Yet)";
+                    }
+
+                    if (jsonContent[sa.AppId]["data"]["type"] != null)
+                        sa.Apptype = (string)jsonContent[sa.AppId]["data"]["type"];
+
+                    if (jsonContent[sa.AppId]["data"]["website"] != null)
+                        sa.WebsiteUrl = ((string)jsonContent[sa.AppId]["data"]["website"]);
+                
+                    if (jsonContent[sa.AppId]["data"]["publishers"] != null)
+                    {
+                        var tempList = new List<string>();
+                        var publishersArray = (JArray)jsonContent[sa.AppId]["data"]["publishers"];
+                        foreach (var onePublisher in publishersArray)
                         {
-                            if (field.Name == "Tags")
-                            {
-                                if (field.Value == propertyName)
-                                {
-                                    SteamScraper.game.TryRemoveCustomField(field);
-                                }
-                            }
+                            tempList.Add(onePublisher.ToString());
                         }
-                        var tags = SteamScraper.game.AddNewCustomField();
-                        tags.Name = "Tags";
-                        tags.Value = propertyName;
+                        sa.Publishers = string.Join("; ", tempList);
                     }
+
+                    if (jsonContent[sa.AppId]["data"]["developers"] != null)
+                    {
+                        var tempList = new List<string>();
+                        var developersArray = (JArray)jsonContent[sa.AppId]["data"]["developers"];
+                        foreach (var oneDeveloper in developersArray)
+                        {
+                            tempList.Add(oneDeveloper.ToString());
+                        }
+                        sa.Developer = string.Join("; ", tempList);
+                    }
+
+                    if (jsonContent[sa.AppId]["data"]["genres"] != null)
+                        sa.SetSteamGenres((JArray)jsonContent[sa.AppId]["data"]["genres"]);
+
+                    if (jsonContent[sa.AppId]["data"]["categories"] != null)
+                        sa.SetPlayModes((JArray)jsonContent[sa.AppId]["data"]["categories"]);
+
+                    if (jsonContent[sa.AppId]["data"]["metacritic"] != null)
+                    {
+                        sa.MetacriticScore = (string)jsonContent[sa.AppId]["data"]["metacritic"]["score"];
+                        sa.SetMetacritic();
+                    }
+
+
+                    //Get Media
+                    if (jsonContent[sa.AppId]["data"]["header_image"] != null)
+                        sa.HeaderImage = (string)jsonContent[sa.AppId]["data"]["header_image"];
+                    sa.HeaderImage = "http://steamcdn-a.akamaihd.net/steam/apps/" + sa.AppId + "/header.jpg"; //Fallback Image
+                    if (jsonContent[sa.AppId]["data"]["background"] != null)
+                        sa.BackgroundImage = (string)jsonContent[sa.AppId]["data"]["background"];
+                    if (jsonContent[sa.AppId]["data"]["movies"] != null && Properties.Settings.Default.VideoQuality != "None")
+                        sa.Movie = (string)jsonContent[sa.AppId]["data"]["movies"][0]["webm"][Properties.Settings.Default.VideoQuality];
+                    if (jsonContent[sa.AppId]["data"]["screenshots"] != null)
+                        sa.Screenshots = (JArray)jsonContent[sa.AppId]["data"]["screenshots"];
                 }
             }
-            //Saves data
-            SteamDBLink(appId);
-            PluginHelper.DataManager.Save();
-        }
-
-        public static void downloadFile(string url, string dest)
-        {
-            using (WebClient wc = new WebClient())
+            catch (Exception exSteamApi)
             {
-                wc.DownloadFileAsync(
-                    // Param1 = Link of file
-                    new System.Uri(url),
-                    // Param2 = Path to save
-                    dest
-                );
+                MessageBox.Show("SteamAPI: " + sa.AppId + " - " + sa.AppName + Environment.NewLine + exSteamApi.Message);
             }
-        }
-
-        public static string CheckURI(string type, string appId)
-        {
-            string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + type;
-            Uri urlCheck = new Uri(url);
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urlCheck);
-            try
-            {
-                var response = request.GetResponse() as HttpWebResponse;
-                var contentType = response.ContentType;
-                response.Close();
-                return contentType;
-            }
-            catch (Exception)
-            {
-                return "False"; //could not connect to the internet (maybe) 
-            }
-        }
-
-        public static string removeHtmlTags(string description)
-        {
-            string htmlTags = @"<[^>].+?>";
-            string quote = @"&quot;";
-            string amp = @"&amp;";
-            var temp = Regex.Replace(description, htmlTags, String.Empty);
-            temp = Regex.Replace(temp, quote,"\"");
-            temp = Regex.Replace(temp, amp, "&");
-            return temp;
-        }
-
-        public static string CleanFileName(string fileName)
-        {
-            var cleanTemp = Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), "_"));
-            return cleanTemp.Replace("'", "_");
-        }
-
-        public static void SteamDBLink(string appId)
-        {
-            //Additional Applications
-            foreach (var addApp in SteamScraper.game.GetAllAdditionalApplications())
-            {
-                if (addApp.Name == "Visit Steam Database page")
-                {
-                    SteamScraper.game.TryRemoveAdditionalApplication(addApp);
-                }
-            }
-            var additionalApplication = SteamScraper.game.AddNewAdditionalApplication();
-            additionalApplication.Name = "Visit Steam Database page";
-            additionalApplication.ApplicationPath = "https://steamdb.info/app/" + appId + "/";
         }
     }
 }
