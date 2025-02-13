@@ -59,7 +59,7 @@ namespace SteamScraper
             {
                 Regex rx = new Regex(@"(\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 MatchCollection matches = rx.Matches(input);
-                SteamApi.SteamSearch(matches[0].Value.ToString());
+                _ = SteamApi.SteamSearchAsync(matches[0].Value.ToString());
             }
             else
             {
@@ -79,7 +79,7 @@ namespace SteamScraper
                 {
                     Regex rx = new Regex(@"(\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
                     MatchCollection matches = rx.Matches(input);
-                    SteamApi.SteamSearch(matches[0].Value.ToString());
+                    _ = SteamApi.SteamSearchAsync(matches[0].Value.ToString());
                 }
             }
         }

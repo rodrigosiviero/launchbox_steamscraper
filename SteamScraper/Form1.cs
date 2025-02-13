@@ -35,7 +35,7 @@ namespace SteamScraper
                     DialogResult dialogResult = MessageBox.Show("This game has some Metadata already, Do you want to replace it?", "Steam Downloader", MessageBoxButtons.YesNo);
                     if (dialogResult == DialogResult.Yes)
                     {
-                        SteamApi.SteamSearch(SteamAppId);
+                        SteamApi.SteamSearchAsync(SteamAppId);
                     }
                     else if (dialogResult == DialogResult.No)
                     {
@@ -44,7 +44,7 @@ namespace SteamScraper
                 }
                 else
                 {
-                    SteamApi.SteamSearch(SteamAppId);
+                    SteamApi.SteamSearchAsync(SteamAppId);
                 }
                 this.Close();
             }

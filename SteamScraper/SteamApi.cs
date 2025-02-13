@@ -11,6 +11,9 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.Globalization;
 using Newtonsoft.Json;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Runtime.Versioning;
 
 namespace SteamScraper
 {
@@ -30,11 +33,8 @@ namespace SteamScraper
         private static JArray genres;
         private static DateTime? dateTime;
 
-        public static void SteamSearch(string appId)
+        public static async Task SteamSearchAsync(string appId)
         {
-            //SSL
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             using (var webClient = new System.Net.WebClient())
             {
                 string gameUrl = "https://store.steampowered.com/api/appdetails?cc=UK&appids=" + appId;
@@ -153,7 +153,7 @@ namespace SteamScraper
                 var count = 1;
                 foreach (var oneSS in screenshots)
                 {
-                    downloadFile(oneSS["path_full"].ToString(), destImages + @"\" + "\\Screenshot - Gameplay\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
+                    downloadFile(oneSS["path_full"].ToString(), destImages + @"\" + "\\Steam Screenshot\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
                     count++;
                 }
             }
@@ -163,22 +163,25 @@ namespace SteamScraper
             string marquee = "library_hero.jpg";
             string clearLogo = "logo.png";
 
-            if (CheckURI(clearLogo, appId) == "image/png")
+            var clearLogoType = await CheckURI(clearLogo, appId);
+            if (clearLogoType == "image/png")
             {
-                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + clearLogo;
+                string url = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + appId + "/" + clearLogo;
                 downloadFile(url, destImages + @"\" + "\\Clear Logo\\" + CleanFileName(gameTitle) + ".png");
             }
-            
-            if (CheckURI(boxCover, appId) == "image/jpeg")
+
+            var boxCoverType = await CheckURI(boxCover, appId);
+            if (boxCoverType == "image/jpeg")
             {
-                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + boxCover;
-                downloadFile(url, destImages + @"\" + "\\Box - Front\\" + CleanFileName(gameTitle) + ".jpg");
+                string url = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + appId + "/" + boxCover;
+                downloadFile(url, destImages + @"\" + "\\Steam Poster\\" + CleanFileName(gameTitle) + ".jpg");
             }
 
-            if (CheckURI(marquee, appId) == "image/jpeg")
+            var marqueeType = await CheckURI(marquee, appId);
+            if (marqueeType == "image/jpeg")
             {
-                string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + marquee;
-                downloadFile(url, destImages + @"\" + "\\Arcade - Marquee\\" + CleanFileName(gameTitle) + ".jpg");
+                string url = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + appId + "/" + marquee;
+                downloadFile(url, destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg");
             }
 
             var dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -220,32 +223,30 @@ namespace SteamScraper
 
         public static void downloadFile(string url, string dest)
         {
-            using (WebClient wc = new WebClient())
+            using (HttpClient client = new HttpClient())
             {
-                wc.DownloadFileAsync(
-                    // Param1 = Link of file
-                    new System.Uri(url),
-                    // Param2 = Path to save
-                    dest
-                );
+                var response = client.GetAsync(url).Result;
+                response.EnsureSuccessStatusCode();
+                var fileBytes = response.Content.ReadAsByteArrayAsync().Result;
+                File.WriteAllBytes(dest, fileBytes);
             }
         }
 
-        public static string CheckURI(string type, string appId)
+        public static async Task<string> CheckURI(string type, string appId)
         {
-            string url = "http://steamcdn-a.akamaihd.net/steam/apps/" + appId + "/" + type;
-            Uri urlCheck = new Uri(url);
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urlCheck);
-            try
+            string url = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + appId + "/" + type;
+            using (HttpClient client = new())
             {
-                var response = request.GetResponse() as HttpWebResponse;
-                var contentType = response.ContentType;
-                response.Close();
-                return contentType;
-            }
-            catch (Exception)
-            {
-                return "False"; //could not connect to the internet (maybe) 
+                try
+                {
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    return response.Content.Headers.ContentType.MediaType;
+                }
+                catch (Exception)
+                {
+                    return "False"; //could not connect to the internet (maybe) 
+                }
             }
         }
 
@@ -266,6 +267,9 @@ namespace SteamScraper
             return cleanTemp.Replace("'", "_");
         }
 
+        // ... other code ...
+
+        [SupportedOSPlatform("windows7.0")]
         public static void SteamDBLink(string appId)
         {
             //Additional Applications
@@ -273,7 +277,7 @@ namespace SteamScraper
             {
                 if (addApp.Name == "Visit Steam Database page")
                 {
-                    SteamScraper.game.TryRemoveAdditionalApplication(addApp);
+                    _ = SteamScraper.game.TryRemoveAdditionalApplication(addApp);
                 }
             }
             var additionalApplication = SteamScraper.game.AddNewAdditionalApplication();
