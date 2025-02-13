@@ -13,7 +13,7 @@ namespace SteamScraper
 
         public static string SteamAppId;
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
             //Steam URL
             string url = textBox1.Text;
@@ -22,7 +22,7 @@ namespace SteamScraper
             string input = @url;
             RegexOptions options = RegexOptions.Singleline | RegexOptions.Multiline;
             Match m = Regex.Match(input, pattern, options);
-            
+
             if (!m.Success)
             {
                 MessageBox.Show("Please paste the entire Steam URL, couldn't find the appId!");
@@ -35,7 +35,7 @@ namespace SteamScraper
                     DialogResult dialogResult = MessageBox.Show("This game has some Metadata already, Do you want to replace it?", "Steam Downloader", MessageBoxButtons.YesNo);
                     if (dialogResult == DialogResult.Yes)
                     {
-                        SteamApi.SteamSearchAsync(SteamAppId);
+                        await SteamApi.SteamSearchAsync(SteamAppId);
                     }
                     else if (dialogResult == DialogResult.No)
                     {
@@ -44,11 +44,10 @@ namespace SteamScraper
                 }
                 else
                 {
-                    SteamApi.SteamSearchAsync(SteamAppId);
+                    await SteamApi.SteamSearchAsync(SteamAppId);
                 }
                 this.Close();
             }
-
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)

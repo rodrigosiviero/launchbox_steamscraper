@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Net;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
-using Unbroken.LaunchBox.Plugins.Data;
 using Unbroken.LaunchBox.Plugins;
 using System.IO;
 using System.Reflection;
-using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Globalization;
@@ -35,10 +32,10 @@ namespace SteamScraper
 
         public static async Task SteamSearchAsync(string appId)
         {
-            using (var webClient = new System.Net.WebClient())
+            using (var httpClient = new HttpClient())
             {
                 string gameUrl = "https://store.steampowered.com/api/appdetails?cc=UK&appids=" + appId;
-                var json = webClient.DownloadString(gameUrl);
+                var json = await httpClient.GetStringAsync(gameUrl);
 
                 JObject jsonContent = JObject.Parse(json);
                 //Serialization
@@ -109,7 +106,6 @@ namespace SteamScraper
             }
             string format = @"d MMM, yyyy";
 
-
             if (release_date.Length < 11)
             {
                 dateTime = null;
@@ -118,13 +114,11 @@ namespace SteamScraper
             else
             {
                 dateTime = DateTime.ParseExact(release_date, format,
-                                        CultureInfo.InvariantCulture);
+                                            CultureInfo.InvariantCulture);
                 SteamScraper.game.ReleaseDate = dateTime.Value.Date;
             }
 
             String sDescFinal = removeHtmlTags(short_description);
-            //string pattern = @"<[^>].+?>";
-            //String sDescFinal = Regex.Replace(short_description, pattern, String.Empty);
 
             //Set Data
             SteamScraper.game.Title = name;
@@ -185,14 +179,14 @@ namespace SteamScraper
             }
 
             var dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var dllPathFinal = Path.Combine(dllPath ,"properties.json");
+            var dllPathFinal = Path.Combine(dllPath, "properties.json");
             using (var streamReader = new StreamReader(dllPathFinal))
             {
                 string jsonFile = streamReader.ReadToEnd();
                 Properties jsonConfig = JsonConvert.DeserializeObject<Properties>(jsonFile);
                 if (jsonConfig.customFields == "true")
                 {
-                    JToken steamSpyTags = SteamTags.SteamTag(appId);
+                    JToken steamSpyTags = await SteamTags.SteamTag(appId);
 
                     var oldfields = SteamScraper.game.GetAllCustomFields();
 

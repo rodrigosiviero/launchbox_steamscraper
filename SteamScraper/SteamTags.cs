@@ -1,24 +1,18 @@
 ﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace SteamScraper
 {
     class SteamTags
     {
-        public static JToken SteamTag(string appId)
+        public static async Task<JToken> SteamTag(string appId)
         {
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            // Use SecurityProtocolType.Ssl3 if needed for compatibility reasons
             var jsonUrl = "https://steamspy.com/api.php?request=appdetails&appid=" + appId;
-            using (var webClient = new System.Net.WebClient())
+            using (var httpClient = new HttpClient())
             {
-                var json = webClient.DownloadString(jsonUrl);
+                var json = await httpClient.GetStringAsync(jsonUrl);
                 JObject jsonContent = JObject.Parse(json);
                 //Serialization
                 return jsonContent["tags"];
