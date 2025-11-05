@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Runtime.Versioning;
+using System.Windows.Forms;
 
 namespace SteamScraper
 {
@@ -189,25 +190,24 @@ namespace SteamScraper
                     JToken steamSpyTags = await SteamTags.SteamTag(appId);
 
                     var oldfields = SteamScraper.game.GetAllCustomFields();
-
+                    foreach (var field in oldfields)
+                    {
+                        if (field.Name == "Tags")
+                        {
+                            SteamScraper.game.TryRemoveCustomField(field);
+                        }
+                    }
+                    List<string> tagList = new List<string>();
                     foreach (var Tag in steamSpyTags)
                     {
                         JProperty jProperty = Tag.ToObject<JProperty>();
                         string propertyName = jProperty.Name;
-                        foreach (var field in oldfields)
-                        {
-                            if (field.Name == "Tags")
-                            {
-                                if (field.Value == propertyName)
-                                {
-                                    SteamScraper.game.TryRemoveCustomField(field);
-                                }
-                            }
-                        }
-                        var tags = SteamScraper.game.AddNewCustomField();
-                        tags.Name = "Tags";
-                        tags.Value = propertyName;
+                        tagList.Add(propertyName);
                     }
+                    string tagsValue = string.Join(";", tagList);
+                    var tagsField = SteamScraper.game.AddNewCustomField();
+                    tagsField.Name = "Tags";
+                    tagsField.Value = tagsValue;
                 }
             }
             //Saves data
