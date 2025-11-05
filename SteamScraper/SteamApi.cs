@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using Unbroken.LaunchBox.Plugins;
@@ -132,14 +132,17 @@ namespace SteamScraper
             gameTitle = SteamScraper.game.Title;
             string destMovies = Path.Combine(path, "Videos", plataforma);
             string destImages = Path.Combine(path, "Images", plataforma);
+            
             //Download Trailer
             if (movie != null)
             {
-                downloadFile(movie, destMovies + @"\" + CleanFileName(gameTitle) + ".webm");
+                string moviePath = Path.Combine(destMovies, CleanFileName(gameTitle) + ".webm");
+                downloadFile(movie, moviePath);
             }
+            
             //Download Banner
-            string banner_path = destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg";
-            downloadFile(header_image, banner_path);
+            string bannerPath = Path.Combine(destImages, "Steam Banner", CleanFileName(gameTitle) + ".jpg");
+            downloadFile(header_image, bannerPath);
 
             //List of Screenshots
             if (screenshots != null)
@@ -147,7 +150,9 @@ namespace SteamScraper
                 var count = 1;
                 foreach (var oneSS in screenshots)
                 {
-                    downloadFile(oneSS["path_full"].ToString(), destImages + @"\" + "\\Steam Screenshot\\" + CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
+                    string screenshotPath = Path.Combine(destImages, "Steam Screenshot", 
+                        CleanFileName(gameTitle) + "-" + count.ToString("D2") + ".jpg");
+                    downloadFile(oneSS["path_full"].ToString(), screenshotPath);
                     count++;
                 }
             }
@@ -161,21 +166,24 @@ namespace SteamScraper
             if (clearLogoType == "image/png")
             {
                 string url = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + appId + "/" + clearLogo;
-                downloadFile(url, destImages + @"\" + "\\Clear Logo\\" + CleanFileName(gameTitle) + ".png");
+                string logoPath = Path.Combine(destImages, "Clear Logo", CleanFileName(gameTitle) + ".png");
+                downloadFile(url, logoPath);
             }
 
             var boxCoverType = await CheckURI(boxCover, appId);
             if (boxCoverType == "image/jpeg")
             {
                 string url = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + appId + "/" + boxCover;
-                downloadFile(url, destImages + @"\" + "\\Steam Poster\\" + CleanFileName(gameTitle) + ".jpg");
+                string posterPath = Path.Combine(destImages, "Steam Poster", CleanFileName(gameTitle) + ".jpg");
+                downloadFile(url, posterPath);
             }
 
             var marqueeType = await CheckURI(marquee, appId);
             if (marqueeType == "image/jpeg")
             {
                 string url = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + appId + "/" + marquee;
-                downloadFile(url, destImages + @"\" + "\\Steam Banner\\" + CleanFileName(gameTitle) + ".jpg");
+                string marqueePath = Path.Combine(destImages, "Steam Banner", CleanFileName(gameTitle) + ".jpg");
+                downloadFile(url, marqueePath);
             }
 
             var dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -217,12 +225,40 @@ namespace SteamScraper
 
         public static void downloadFile(string url, string dest)
         {
-            using (HttpClient client = new HttpClient())
+            try
             {
-                var response = client.GetAsync(url).Result;
-                response.EnsureSuccessStatusCode();
-                var fileBytes = response.Content.ReadAsByteArrayAsync().Result;
-                File.WriteAllBytes(dest, fileBytes);
+                // Create directory if it doesn't exist
+                string directory = Path.GetDirectoryName(dest);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                using (HttpClient client = new HttpClient())
+                {
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                    var response = client.GetAsync(url).Result;
+                    
+                    // Only proceed if successful
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var fileBytes = response.Content.ReadAsByteArrayAsync().Result;
+                        File.WriteAllBytes(dest, fileBytes);
+                        Console.WriteLine($"Successfully downloaded: {Path.GetFileName(dest)}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to download (HTTP {response.StatusCode}): {url}");
+                    }
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error downloading {url}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error downloading {url}: {ex.Message}");
             }
         }
 
@@ -239,7 +275,7 @@ namespace SteamScraper
                 }
                 catch (Exception)
                 {
-                    return "False"; //could not connect to the internet (maybe) 
+                    return "False";
                 }
             }
         }
@@ -260,8 +296,6 @@ namespace SteamScraper
             var cleanTemp = Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), "_"));
             return cleanTemp.Replace("'", "_");
         }
-
-        // ... other code ...
 
         [SupportedOSPlatform("windows7.0")]
         public static void SteamDBLink(string appId)
