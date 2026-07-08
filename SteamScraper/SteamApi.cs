@@ -73,14 +73,13 @@ namespace SteamScraper
                 {
                     developer = null;
                 }
-                if (jsonContent[appId]["data"]["movies"] != null)
-                {
-                    movie = (string)jsonContent[appId]["data"]["movies"][0]["webm"]["480"];
-                }
-                else
-                {
-                    movie = null;
-                }
+                // Steam has changed the "movies" shape over time. Older responses expose downloadable
+                // "webm"/"mp4" objects with "480"/"max" URLs, while newer ones only provide streaming
+                // manifests (dash/hls) which would have to be stitched together.
+                // Probe for a direct file, otherwise fall back to null for now (skip downloading the trailer).
+                var firstMovie = jsonContent[appId]["data"]["movies"]?.FirstOrDefault();
+                movie = (string)(firstMovie?["webm"]?["480"] ?? firstMovie?["webm"]?["max"]
+                                 ?? firstMovie?["mp4"]?["480"] ?? firstMovie?["mp4"]?["max"]);
                 if (jsonContent[appId]["data"]["screenshots"] != null)
                 {
                     screenshots = (JArray)jsonContent[appId]["data"]["screenshots"];
@@ -137,7 +136,8 @@ namespace SteamScraper
             //Download Trailer
             if (movie != null)
             {
-                string moviePath = Path.Combine(destMovies, CleanFileName(gameTitle) + ".webm");
+                string movieExtension = movie.Contains(".mp4") ? ".mp4" : ".webm";
+                string moviePath = Path.Combine(destMovies, CleanFileName(gameTitle) + movieExtension);
                 downloadFile(movie, moviePath);
             }
             
@@ -189,34 +189,44 @@ namespace SteamScraper
 
             var dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var dllPathFinal = Path.Combine(dllPath, "properties.json");
-            using (var streamReader = new StreamReader(dllPathFinal))
+            // properties.json is optional. If it's missing or unreadable, fall back to
+            // default settings (custom Tags field disabled) rather than crashing.
+            Properties jsonConfig = new Properties { customFields = "false" };
+            if (File.Exists(dllPathFinal))
             {
-                string jsonFile = streamReader.ReadToEnd();
-                Properties jsonConfig = JsonConvert.DeserializeObject<Properties>(jsonFile);
-                if (jsonConfig.customFields == "true")
+                try
                 {
-                    JToken steamSpyTags = await SteamTags.SteamTag(appId);
-
-                    var oldfields = SteamScraper.game.GetAllCustomFields();
-                    foreach (var field in oldfields)
-                    {
-                        if (field.Name == "Tags")
-                        {
-                            SteamScraper.game.TryRemoveCustomField(field);
-                        }
-                    }
-                    List<string> tagList = new List<string>();
-                    foreach (var Tag in steamSpyTags)
-                    {
-                        JProperty jProperty = Tag.ToObject<JProperty>();
-                        string propertyName = jProperty.Name;
-                        tagList.Add(propertyName);
-                    }
-                    string tagsValue = string.Join(";", tagList);
-                    var tagsField = SteamScraper.game.AddNewCustomField();
-                    tagsField.Name = "Tags";
-                    tagsField.Value = tagsValue;
+                    string jsonFile = File.ReadAllText(dllPathFinal);
+                    jsonConfig = JsonConvert.DeserializeObject<Properties>(jsonFile) ?? jsonConfig;
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Could not read properties.json, using defaults: {ex.Message}");
+                }
+            }
+            if (jsonConfig.customFields == "true")
+            {
+                JToken steamSpyTags = await SteamTags.SteamTag(appId);
+
+                var oldfields = SteamScraper.game.GetAllCustomFields();
+                foreach (var field in oldfields)
+                {
+                    if (field.Name == "Tags")
+                    {
+                        SteamScraper.game.TryRemoveCustomField(field);
+                    }
+                }
+                List<string> tagList = new List<string>();
+                foreach (var Tag in steamSpyTags)
+                {
+                    JProperty jProperty = Tag.ToObject<JProperty>();
+                    string propertyName = jProperty.Name;
+                    tagList.Add(propertyName);
+                }
+                string tagsValue = string.Join(";", tagList);
+                var tagsField = SteamScraper.game.AddNewCustomField();
+                tagsField.Name = "Tags";
+                tagsField.Value = tagsValue;
             }
             //Saves data
             SteamDBLink(appId);
